@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BMI 體質指數計算器</title>
+  <title>BMI 體質指數計算器 / BMI Calculator</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -27,12 +27,34 @@
       width: 100%;
     }
 
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
     h1 {
-      font-size: 1.5rem;
-      text-align: center;
-      margin-top: 0;
-      margin-bottom: 24px;
+      font-size: 1.4rem;
+      margin: 0;
       color: #1a365d;
+    }
+
+    .lang-btn {
+      background: #edf2f7;
+      border: 1px solid #cbd5e0;
+      color: #2b6cb0;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .lang-btn:hover {
+      background: #e2e8f0;
+      border-color: #a0aec0;
     }
 
     .form-group {
@@ -61,7 +83,7 @@
       border-color: #3182ce;
     }
 
-    button {
+    .calc-btn {
       width: 100%;
       background-color: #3182ce;
       color: #ffffff;
@@ -75,7 +97,7 @@
       margin-top: 10px;
     }
 
-    button:hover {
+    .calc-btn:hover {
       background-color: #2b6cb0;
     }
 
@@ -108,64 +130,129 @@
 </head>
 <body>
   <div class="container">
-    <h1>BMI 體質指數計算器</h1>
+    <div class="header-row">
+      <h1 id="title">BMI 體質指數計算器</h1>
+      <button type="button" id="lang-btn" class="lang-btn" onclick="toggleLanguage()">English</button>
+    </div>
 
     <div class="form-group">
-      <label for="height">身高（公分）</label>
+      <label for="height" id="lbl-height">身高（公分）</label>
       <input type="number" id="height" placeholder="請輸入身高，例如：170" min="50" max="250" step="0.1">
     </div>
 
     <div class="form-group">
-      <label for="weight">體重（公斤）</label>
+      <label for="weight" id="lbl-weight">體重（公斤）</label>
       <input type="number" id="weight" placeholder="請輸入體重，例如：65" min="20" max="300" step="0.1">
     </div>
 
-    <button type="button" onclick="calculateBMI()">計算 BMI</button>
+    <button type="button" id="btn-calc" class="calc-btn" onclick="calculateBMI()">計算 BMI</button>
 
     <div id="result" class="result">
-      <div>您的 BMI 數值為：</div>
+      <div id="lbl-result">您的 BMI 數值為：</div>
       <div id="bmi-value" class="result-bmi">--</div>
       <div id="bmi-status" class="result-status">--</div>
     </div>
   </div>
 
   <script>
+    const I18N = {
+      zh: {
+        title: "BMI 體質指數計算器",
+        langBtn: "English",
+        lblHeight: "身高（公分）",
+        lblWeight: "體重（公斤）",
+        phHeight: "請輸入身高，例如：170",
+        phWeight: "請輸入體重，例如：65",
+        btnCalc: "計算 BMI",
+        lblResult: "您的 BMI 數值為：",
+        alertEmpty: "請輸入有效的身高與體重數值！",
+        underweight: "體重過輕",
+        normal: "健康體位（正常）",
+        overweight: "體位過重",
+        obese: "肥胖"
+      },
+      en: {
+        title: "BMI Calculator",
+        langBtn: "中文",
+        lblHeight: "Height (cm)",
+        lblWeight: "Weight (kg)",
+        phHeight: "e.g. 170",
+        phWeight: "e.g. 65",
+        btnCalc: "Calculate BMI",
+        lblResult: "Your BMI is:",
+        alertEmpty: "Please enter valid height and weight values!",
+        underweight: "Underweight",
+        normal: "Normal weight",
+        overweight: "Overweight",
+        obese: "Obese"
+      }
+    };
+
+    let currentLang = "zh";
+    let lastBMI = null;
+
+    function toggleLanguage() {
+      currentLang = currentLang === "zh" ? "en" : "zh";
+      renderLanguage();
+      if (lastBMI !== null) {
+        updateStatusDisplay();
+      }
+    }
+
+    function renderLanguage() {
+      const t = I18N[currentLang];
+      document.getElementById("title").textContent = t.title;
+      document.getElementById("lang-btn").textContent = t.langBtn;
+      document.getElementById("lbl-height").textContent = t.lblHeight;
+      document.getElementById("lbl-weight").textContent = t.lblWeight;
+      document.getElementById("height").placeholder = t.phHeight;
+      document.getElementById("weight").placeholder = t.phWeight;
+      document.getElementById("btn-calc").textContent = t.btnCalc;
+      document.getElementById("lbl-result").textContent = t.lblResult;
+    }
+
+    function updateStatusDisplay() {
+      const t = I18N[currentLang];
+      const statusSpan = document.getElementById("bmi-status");
+      let status = "";
+      let statusClass = "";
+
+      if (lastBMI < 18.5) {
+        status = t.underweight;
+        statusClass = "underweight";
+      } else if (lastBMI < 24.0) {
+        status = t.normal;
+        statusClass = "normal";
+      } else if (lastBMI < 27.0) {
+        status = t.overweight;
+        statusClass = "overweight";
+      } else {
+        status = t.obese;
+        statusClass = "obese";
+      }
+
+      statusSpan.textContent = status;
+      statusSpan.className = "result-status " + statusClass;
+    }
+
     function calculateBMI() {
-      const height = parseFloat(document.getElementById('height').value);
-      const weight = parseFloat(document.getElementById('weight').value);
-      const resultDiv = document.getElementById('result');
-      const valueSpan = document.getElementById('bmi-value');
-      const statusSpan = document.getElementById('bmi-status');
+      const height = parseFloat(document.getElementById("height").value);
+      const weight = parseFloat(document.getElementById("weight").value);
+      const resultDiv = document.getElementById("result");
+      const valueSpan = document.getElementById("bmi-value");
+      const t = I18N[currentLang];
 
       if (!height || !weight || height <= 0 || weight <= 0) {
-        alert('請輸入有效的身高與體重數值！');
+        alert(t.alertEmpty);
         return;
       }
 
       const heightInMeters = height / 100;
-      const bmi = (weight / (heightInMeters * heightInMeters)).toFixed(1);
+      lastBMI = parseFloat((weight / (heightInMeters * heightInMeters)).toFixed(1));
 
-      let status = '';
-      let statusClass = '';
-
-      if (bmi < 18.5) {
-        status = '體重過輕';
-        statusClass = 'underweight';
-      } else if (bmi < 24.0) {
-        status = '健康體位（正常）';
-        statusClass = 'normal';
-      } else if (bmi < 27.0) {
-        status = '體位過重';
-        statusClass = 'overweight';
-      } else {
-        status = '肥胖';
-        statusClass = 'obese';
-      }
-
-      valueSpan.textContent = bmi;
-      statusSpan.textContent = status;
-      statusSpan.className = 'result-status ' + statusClass;
-      resultDiv.style.display = 'block';
+      valueSpan.textContent = lastBMI.toFixed(1);
+      updateStatusDisplay();
+      resultDiv.style.display = "block";
     }
   </script>
 </body>
